@@ -1,12 +1,10 @@
-// FluffyTagProcessor - A resilient XML-like tag processing system
-// TypeScript implementation with strict typing
-
 interface TagConfig {
     handler: (attributes: Record<string, string>, content: string) => void;
     streamContent: boolean;
     processNested: boolean;
     streamingCallback?: (char: string, attributes: Record<string, string>) => void;
     allowsNestedOfSameType: boolean;
+    onTagCompleteCallback?: (tagName: string, attributes: Record<string, string>, content: string) => void;
 }
 
 interface TagContext {
@@ -24,6 +22,7 @@ interface HandlerOptions {
     allowsNestedOfSameType?: boolean;
     streamContent?: boolean;
     streamingCallback?: (char: string, attributes: Record<string, string>) => void;
+    onTagCompleteCallback?: (tagName: string, attributes: Record<string, string>, content: string) => void;
 }
 
 class FluffyTagProcessor {
@@ -59,7 +58,8 @@ class FluffyTagProcessor {
             allowNested = true,
             allowsNestedOfSameType = false,
             streamContent = true,
-            streamingCallback = null
+            streamingCallback = null,
+            onTagCompleteCallback = null
         }: HandlerOptions = {}
     ): void {
         this.tagConfigs.set(tagName, {
@@ -67,7 +67,8 @@ class FluffyTagProcessor {
             streamContent,
             processNested: allowNested,
             streamingCallback,
-            allowsNestedOfSameType
+            allowsNestedOfSameType,
+            onTagCompleteCallback
         });
     }
 
@@ -204,8 +205,15 @@ class FluffyTagProcessor {
         if (lastTag.name === tagName) {
             const context = this.tagStack.pop()!;
             const content = context.content.join('').trim();
+
+            // Main handler
             if (context.config?.handler) {
                 context.config.handler(context.attributes, content);
+            }
+
+            // onTagCompleteCallback
+            if (context.config?.onTagCompleteCallback) {
+                context.config.onTagCompleteCallback(tagName, context.attributes, content);
             }
         } else {
             console.warn(`⚠️ Warning: Mismatched closing tag: expected ${lastTag.name}, got ${tagName}`);
