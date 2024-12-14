@@ -332,4 +332,4 @@ MIT License - see [LICENSE](LICENSE) for details
 
 ---
 
-Made with ❤️ by [Your Name](https://github.com/yourusername)
+Made with ❤️ by Mohamed Elbeskeri
