@@ -1,6 +1,3 @@
-// FluffyTagProcessor - A resilient XML-like tag processing system
-// Handles streaming content, nested tags, and custom handlers
-
 /**
  * @typedef {Object} TagConfig
  * @property {Function} handler - Main handler function for the tag
@@ -8,6 +5,7 @@
  * @property {boolean} processNested - Whether to process nested tags
  * @property {Function|null} streamingCallback - Optional callback for streaming content
  * @property {boolean} allowsNestedOfSameType - Whether the tag can be nested within itself
+ * @property {Function|null} onTagCompleteCallback - Optional callback when tag processing is completed
  */
 
 /**
@@ -44,14 +42,16 @@ class FluffyTagProcessor {
         allowNested = true,
         allowsNestedOfSameType = false,
         streamContent = true,
-        streamingCallback = null
+        streamingCallback = null,
+        onTagCompleteCallback = null
     } = {}) {
         this.tagConfigs.set(tagName, {
             handler,
             streamContent,
             processNested: allowNested,
             streamingCallback,
-            allowsNestedOfSameType
+            allowsNestedOfSameType,
+            onTagCompleteCallback
         });
     }
 
@@ -199,8 +199,15 @@ class FluffyTagProcessor {
         if (lastTag.name === tagName) {
             const context = this.tagStack.pop();
             const content = context.content.join('').trim();
+
+            // Invoke main handler
             if (context.config?.handler) {
                 context.config.handler(context.attributes, content);
+            }
+
+            // Invoke onTagCompleteCallback, if defined
+            if (context.config?.onTagCompleteCallback) {
+                context.config.onTagCompleteCallback(tagName, context.attributes, content);
             }
         } else {
             console.warn(`⚠️ Warning: Mismatched closing tag: expected ${lastTag.name}, got ${tagName}`);
