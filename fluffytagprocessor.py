@@ -10,6 +10,8 @@ class TagConfig:
     process_nested: bool = True
     streaming_callback: Optional[Callable[[str, Dict[str, str]], None]] = None
     allows_nested_of_same_type: bool = False
+    on_tag_complete_callback: Optional[Callable[[str, Dict[str, str], str], None]] = None
+    # New field to handle logic after the full tag is processed
 
 @dataclass
 class TagContext:
@@ -42,13 +44,15 @@ class FluffyTagProcessor:
                         allow_nested: bool = True,
                         allows_nested_of_same_type: bool = False,
                         stream_content: bool = True,
-                        streaming_callback: Optional[Callable] = None):
+                        streaming_callback: Optional[Callable] = None,
+                        on_tag_complete_callback: Optional[Callable[[str, Dict[str, str], str], None]] = None):
         self.tag_configs[tag_name] = TagConfig(
             handler=handler,
             stream_content=stream_content,
             process_nested=allow_nested,
             streaming_callback=streaming_callback,
-            allows_nested_of_same_type=allows_nested_of_same_type
+            allows_nested_of_same_type=allows_nested_of_same_type,
+            on_tag_complete_callback=on_tag_complete_callback
         )
 
     def set_untagged_content_handler(self, handler: Optional[Callable[[str], None]]) -> None:
@@ -143,7 +147,34 @@ class FluffyTagProcessor:
         if self.tag_stack[-1].name == tag_name:
             context = self.tag_stack.pop()
             content = ''.join(context.content).strip()
+            
+            # Invoke the primary handler
             if context.config and context.config.handler:
                 context.config.handler(context.attributes, content)
+            
+            # Invoke the on_tag_complete_callback, if specified
+            if context.config and context.config.on_tag_complete_callback:
+                context.config.on_tag_complete_callback(tag_name, context.attributes, content)
         else:
             print(f"⚠️ Warning: Mismatched closing tag: expected {self.tag_stack[-1].name}, got {tag_name}")
+
+# Example usage
+def handle_tag(attributes: Dict[str, str], content: str):
+    print(f"Handler triggered: {attributes} | Content: {content}")
+
+def on_complete(tag_name: str, attributes: Dict[str, str], content: str):
+    print(f"Tag '{tag_name}' completed. Full content: {content}")
+    # Perform additional operations here (e.g., save to database)
+
+processor = FluffyTagProcessor()
+
+# Register a handler with on_tag_complete_callback
+processor.register_handler(
+    "example",
+    handler=handle_tag,
+    on_tag_complete_callback=on_complete
+)
+
+# Process a string with a complete tag
+test_input = "<example attr='value'>Hello, World!</example>"
+processor.process_token(test_input)
