@@ -11,7 +11,6 @@ class TagConfig:
     streaming_callback: Optional[Callable[[str, Dict[str, str]], None]] = None
     allows_nested_of_same_type: bool = False
     on_tag_complete_callback: Optional[Callable[[str, Dict[str, str], str], None]] = None
-    # New field to handle logic after the full tag is processed
 
 @dataclass
 class TagContext:
