@@ -326,7 +326,7 @@ MIT License - see [LICENSE](LICENSE) for details
 
 ## Support
 
-- GitHub Issues: [Create an issue](https://github.com/username/fluffy-tag-processor/issues)
+- GitHub Issues: [Create an issue](https://github.com/m-ahmed-elbeskeri/FluffyTagProcessor/issues)
 - Documentation: [Visit docs](DOCUMENTATION.md)
 
 ---
