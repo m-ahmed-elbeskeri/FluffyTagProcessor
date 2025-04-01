@@ -1,4 +1,11 @@
-from typing import Dict, List, Optional, Callable, Any, TypedDict, Union, cast
+"""
+Core implementation of the FluffyTagProcessor.
+
+This module contains the main processor class and related utilities
+for parsing XML-like tags in text content.
+"""
+
+from typing import Dict, List, Optional, Callable, Any, Union
 from dataclasses import dataclass, field
 from datetime import datetime
 import re
@@ -10,28 +17,23 @@ logger = logging.getLogger("fluffy_tag_processor")
 
 
 class TagProcessorError(Exception):
-    """Custom exception for tag processing errors"""
+    """Custom exception for tag processing errors."""
 
     def __init__(self, message: str, context: Optional[Dict[str, Any]] = None):
+        """
+        Initialize a new TagProcessorError.
+
+        Args:
+            message: Error message
+            context: Additional context information
+        """
         super().__init__(message)
         self.context = context or {}
 
 
-class TagConfigDict(TypedDict, total=False):
-    """Type definition for tag configuration options"""
-
-    handler: Callable[[Dict[str, str], str], Any]
-    stream_content: bool
-    process_nested: bool
-    streaming_callback: Optional[Callable[[str, Dict[str, str]], None]]
-    allows_nested_of_same_type: bool
-    on_tag_start_callback: Optional[Callable[[str, Dict[str, str]], None]]
-    on_tag_complete_callback: Optional[Callable[[str, Dict[str, str], str], None]]
-
-
 @dataclass
 class TagConfig:
-    """Configuration for a tag handler"""
+    """Configuration for a tag handler."""
 
     handler: Callable[[Dict[str, str], str], Any]
     stream_content: bool = True
@@ -42,7 +44,7 @@ class TagConfig:
     on_tag_complete_callback: Optional[Callable[[str, Dict[str, str], str], None]] = None
 
     def __post_init__(self):
-        """Validate configuration after initialization"""
+        """Validate configuration after initialization."""
         if not callable(self.handler):
             raise ValueError("Handler must be callable")
 
@@ -58,7 +60,7 @@ class TagConfig:
 
 @dataclass
 class TagContext:
-    """Context for an active tag being processed"""
+    """Context for an active tag being processed."""
 
     name: str
     attributes: Dict[str, str]
@@ -70,7 +72,12 @@ class TagContext:
 
 
 def error_handler(method):
-    """Decorator to handle errors in TagProcessor methods"""
+    """
+    Decorator to handle errors in TagProcessor methods.
+
+    Catches and processes exceptions in the decorated method,
+    sending them to the processor's error handler.
+    """
 
     @wraps(method)
     def wrapper(self, *args, **kwargs):
@@ -97,7 +104,7 @@ class FluffyTagProcessor:
     """
     A processor for XML-like tags in text content.
 
-    Primarily designed for processing LLM outputs containing structured tags,
+    Designed for processing structured tags in text outputs from LLMs,
     similar to Claude's artifacts or other XML-like structured content.
     """
 
@@ -643,41 +650,3 @@ class FluffyTagProcessor:
             {"name": context.name, "start_time": context.start_time}
             for context in self.tag_stack
         ]
-
-
-# Example usage
-if __name__ == "__main__":
-    def handle_tag(attributes: Dict[str, str], content: str) -> None:
-        print(f"Handler triggered: {attributes} | Content: {content}")
-
-
-    def on_tag_start(tag_name: str, attributes: Dict[str, str]) -> None:
-        print(f"Started processing tag '{tag_name}' with attributes: {attributes}")
-
-
-    def on_complete(tag_name: str, attributes: Dict[str, str], content: str) -> None:
-        print(f"Tag '{tag_name}' completed. Full content: {content}")
-        # You could perform additional operations here (e.g., save to database)
-
-
-    # Create processor with debug mode enabled
-    processor = FluffyTagProcessor(debug=True)
-
-    # Register a handler with callbacks
-    processor.register_handler(
-        "example",
-        handler=handle_tag,
-        on_tag_start_callback=on_tag_start,
-        on_tag_complete_callback=on_complete
-    )
-
-    # Process a string with a complete tag
-    test_input = "<example attr='value'>Hello, World!</example>"
-    processor.process_string(test_input)
-
-    # Process a self-closing tag
-    test_input2 = "<example attr='self-closing' />Extra content"
-    processor.process_string(test_input2)
-
-    # Always flush at the end to process any remaining content
-    processor.flush()
