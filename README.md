@@ -181,27 +181,11 @@ This flow allows for both batch processing of complete texts and streaming proce
 ### Installation
 
 #### JavaScript/TypeScript
-
-```bash
-# Using npm
-npm install fluffy-tag-processor
-
-# Using yarn
-yarn add fluffy-tag-processor
-
-# Using pnpm
-pnpm add fluffy-tag-processor
-```
+Add the js/ts version to your project.
 
 #### Python
 
-```bash
-# Using pip
-pip install fluffy-tag-processor
-
-# Using poetry
-poetry add fluffy-tag-processor
-```
+Add the python folder to your project.
 
 ### Basic Setup
 
